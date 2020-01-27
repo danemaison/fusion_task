@@ -8,14 +8,14 @@ $request = [
 ];
 
 $response = [
-  'status' => 200,
+  'status_code' => 200,
   'headers'=>[
     'Content-Type' => 'application/json'
   ]
 ];
 
 function get_db_link(){
-  // get credentials from env...
+  // get credentials from env
   $host = 'localhost';
   $user = 'root';
   $pass = 'root';
@@ -25,6 +25,19 @@ function get_db_link(){
     throw new ApiError('Webservice unavailable', 503);
   }
   return $link;
+}
+
+function send_response($response){
+  // send a response and exit
+  http_response_code($response['status_code']);
+  forEach($response['headers'] as $key=>$value){
+    header("$key: $value");
+  }
+  if(array_key_exists('body', $response)){
+    print(json_encode($response['body']));
+  }
+
+  exit;
 }
 
 function read_by_id($link, $id, $table){
@@ -37,6 +50,13 @@ function delete_by_id($link, $id, $table){
   $query = "DELETE FROM `{$table}` WHERE `id`={intval($id)}";
   $link->query($query);
   return $link->affected_rows > 0;
+}
+
+function check_foreign_key($link, $id, $table)
+{
+  if (!read_by_id($link, intval($id), $table)) {
+    throw new ApiError("invalid foreign key $id", 404);
+  }
 }
 
 function check_required_body_fields($required_fields, $body)
@@ -61,8 +81,17 @@ set_exception_handler(function($error){
     $message = 'An unexpected error has occured';
   }
 
-  // set up a response
-  print("$status error: " . $message);
+  $response = [
+    'status_code' => $status,
+    'headers' => [
+      'Content-Type' => 'application/json'
+    ],
+    'body' => [
+      'error' => $message
+    ]
+  ];
+
+  send_response($response);
 })
 
 ?>

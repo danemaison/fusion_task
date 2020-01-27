@@ -1,6 +1,6 @@
 <?php
 
-include_once 'helpers.php';
+include_once '../helpers.php';
 
 if ($request['method'] === 'POST') {
   $name = $request['body']['client_name'] ?? '';
@@ -10,10 +10,10 @@ if ($request['method'] === 'POST') {
   }
 
   $link = get_db_link();
-  $client_id = create_client($name, $link);
-
-  // send response
-  print_r($client_id);
+  $client = create_client($name, $link);
+  $response['status'] = 201;
+  $response['body'] = $client;
+  send_response($response);
 
 }
 
@@ -33,9 +33,8 @@ if ($request['method'] === 'PUT') {
     throw new ApiError("cannot update with provided id $id", 400);
   }
 
-  // send response
-  print_r($updated);
-
+  $response['body'] = $updated;
+  send_response($response);
 }
 
 if ($request['method'] === 'DELETE') {
@@ -50,9 +49,7 @@ if ($request['method'] === 'DELETE') {
     throw new ApiError("cannot find client with id $id", 404);
   }
 
-  // send response
-  print_r($result);
-
+  send_response($response);
 }
 
 function create_client($clientName, $link){
@@ -81,3 +78,5 @@ function update_client_by_id($id, $name, $link)
   $updated = read_by_id($link, $id, 'clients');
   return $updated;
 }
+
+?>
